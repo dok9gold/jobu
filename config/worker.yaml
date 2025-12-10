@@ -1,0 +1,7 @@
+worker:
+  database: default                 # job 관리용 DB (database.yaml에 정의된 이름)
+  databases: [sqlite_2, postgres_1, mysql_1]  # 핸들러에서 사용할 추가 DB들
+  pool_size: 5                      # 동시 실행 워커 수
+  poll_interval_seconds: 5          # PENDING 잡 폴링 주기
+  claim_batch_size: 10              # 한번에 가져올 잡 수
+  shutdown_timeout_seconds: 30      # graceful shutdown 대기 시간

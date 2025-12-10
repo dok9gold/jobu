@@ -1,0 +1,59 @@
+databases:
+  default:
+    type: sqlite
+    path: "data/jobu.db"
+    pool:
+      pool_size: 5
+      pool_timeout: 30.0
+      max_idle_time: 300.0
+    options:
+      busy_timeout: 5000
+      journal_mode: "WAL"
+      synchronous: "NORMAL"
+      cache_size: -2000
+      foreign_keys: true
+
+  # SQLite 추가 DB (Docker 없이 테스트용)
+  sqlite_2:
+    type: sqlite
+    path: "data/sample.db"
+    pool:
+      pool_size: 3
+      pool_timeout: 30.0
+      max_idle_time: 300.0
+    options:
+      busy_timeout: 5000
+      journal_mode: "WAL"
+      synchronous: "NORMAL"
+      foreign_keys: true
+
+  # PostgreSQL (Docker 필요)
+  postgres_1:
+    type: postgres
+    host: localhost
+    port: 5432
+    database: jobu
+    user: jobu
+    password: jobu_dev
+    pool:
+      min_size: 2
+      max_size: 10
+      max_inactive_connection_lifetime: 300.0
+    options:
+      timezone: "UTC"
+
+  # MySQL (Docker 필요)
+  mysql_1:
+    type: mysql
+    host: localhost
+    port: 3306
+    database: jobu
+    user: jobu
+    password: jobu_dev
+    pool:
+      minsize: 2
+      maxsize: 10
+      pool_recycle: 300
+    options:
+      charset: "utf8mb4"
+      autocommit: false
