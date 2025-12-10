@@ -48,6 +48,12 @@ jobu/
 ## 설치
 
 ```bash
+pip install jobu
+```
+
+### 개발 환경 설치
+
+```bash
 # 가상환경 생성 및 활성화
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
