@@ -45,15 +45,15 @@ http://localhost:8080/crons 접속 후 샘플 핸들러 등록:
 
 | handler_name | cron_expr | 설명 |
 |--------------|-----------|------|
-| sample1 | */1 * * * * | 1분마다 실행 |
-| sample2 | */2 * * * * | 2분마다 실행 |
-| sample3 | */3 * * * * | 3분마다 실행 |
-| sample4 | */1 * * * * | MySQL 예제 |
-| sample5 | */2 * * * * | MySQL 예제 |
-| sample6 | */3 * * * * | MySQL 예제 |
-| sample7 | */1 * * * * | SQLite 예제 |
-| sample8 | */2 * * * * | SQLite 예제 |
-| sample9 | */3 * * * * | SQLite 예제 |
+| sqlite_crud | */1 * * * * | SQLite CRUD (Docker 불필요) |
+| postgres_crud | */2 * * * * | PostgreSQL CRUD |
+| mysql_crud | */3 * * * * | MySQL CRUD |
+| sync_sqlite_to_postgres | */5 * * * * | SQLite -> PostgreSQL 동기화 |
+| sync_postgres_to_mysql | */5 * * * * | PostgreSQL -> MySQL 동기화 |
+| multi_db_report | */10 * * * * | 3개 DB 집계 리포트 |
+| service_layer | */1 * * * * | 서비스 레이어 패턴 |
+| do_work_pattern | */2 * * * * | do_work 패턴 |
+| concurrent_queries | */3 * * * * | 비동기 병렬 쿼리 |
 
 ### 6. 실행 확인
 
@@ -71,23 +71,23 @@ http://localhost:8080/jobs 에서 Job 실행 이력을 확인할 수 있습니�
 
 ```
 worker/job/
-  sample.py           # 단일 파일 핸들러
-  group1/             # PostgreSQL 예제
-    sample1.py
-    sample2.py
-    sample3.py
-  group2/             # MySQL 예제
-    sample4.py
-    sample5.py
-    sample6.py
-  group3/             # SQLite 예제
-    sample7.py
-    sample8.py
-    sample9.py
+  basic/                # 단일 DB CRUD 예제
+    sqlite_crud.py      # SQLite (Docker 불필요)
+    postgres_crud.py    # PostgreSQL
+    mysql_crud.py       # MySQL
+  multi_db/             # 멀티 DB 트랜잭션 예제
+    sync_sqlite_to_postgres.py
+    sync_postgres_to_mysql.py
+    multi_db_report.py
+  patterns/             # 코드 구조 패턴
+    service_layer.py    # Spring MVC 스타일
+    do_work_pattern.py  # 심플 패턴
+  async_patterns/       # 비동기 고급 패턴
+    concurrent_queries.py
 ```
 
 ## 더 알아보기
 
-- [worker/job/HANDLERS.md](worker/job/HANDLERS.md) - 핸들러 작성 가이드
+- [worker/job/README.md](worker/job/README.md) - 핸들러 개발 가이드
 - [CONTRIBUTING.md](CONTRIBUTING.md) - 개발 규칙
 - [PRODUCTION.md](PRODUCTION.md) - 운영 환경 가이드
