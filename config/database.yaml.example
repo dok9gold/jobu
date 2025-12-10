@@ -1,0 +1,14 @@
+databases:
+  default:
+    type: sqlite
+    path: "data/jobu.db"
+    pool:
+      pool_size: 5
+      pool_timeout: 30.0
+      max_idle_time: 300.0
+    options:
+      busy_timeout: 5000
+      journal_mode: "WAL"
+      synchronous: "NORMAL"
+      cache_size: -2000
+      foreign_keys: true
