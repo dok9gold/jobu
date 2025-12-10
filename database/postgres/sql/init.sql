@@ -31,9 +31,19 @@ CREATE TABLE IF NOT EXISTS job_executions (
     UNIQUE(job_id, scheduled_time)
 );
 
+-- sample_data 테이블 생성 (샘플 핸들러용)
+CREATE TABLE IF NOT EXISTS sample_data (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    value TEXT,
+    writer_handler VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 인덱스 생성
 CREATE INDEX IF NOT EXISTS idx_job_executions_job_id ON job_executions(job_id);
 CREATE INDEX IF NOT EXISTS idx_job_executions_status ON job_executions(status);
 CREATE INDEX IF NOT EXISTS idx_job_executions_created_at ON job_executions(created_at);
 CREATE INDEX IF NOT EXISTS idx_job_executions_scheduled_time ON job_executions(scheduled_time);
 CREATE INDEX IF NOT EXISTS idx_cron_jobs_is_enabled ON cron_jobs(is_enabled);
+CREATE INDEX IF NOT EXISTS idx_sample_data_writer_handler ON sample_data(writer_handler);

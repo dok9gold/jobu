@@ -39,3 +39,11 @@ CREATE INDEX idx_job_executions_created_at ON job_executions(created_at);
 CREATE INDEX idx_job_executions_scheduled_time ON job_executions(scheduled_time);
 CREATE INDEX idx_cron_jobs_is_enabled ON cron_jobs(is_enabled);
 
+-- sample_data 테이블 (샘플 핸들러용)
+CREATE TABLE IF NOT EXISTS sample_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    value TEXT,
+    writer_handler VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

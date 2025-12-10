@@ -1,0 +1,1 @@
+-- sample6 SQL queries

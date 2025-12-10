@@ -40,3 +40,15 @@ CREATE INDEX IF NOT EXISTS idx_job_executions_created_at ON job_executions(creat
 CREATE INDEX IF NOT EXISTS idx_job_executions_scheduled_time ON job_executions(scheduled_time);
 CREATE INDEX IF NOT EXISTS idx_cron_jobs_is_enabled ON cron_jobs(is_enabled);
 
+-- name: create_sample_data_table#
+-- sample_data 테이블 생성 (샘플 핸들러용)
+CREATE TABLE IF NOT EXISTS sample_data (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    value TEXT,
+    writer_handler TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- name: create_sample_data_indexes#
+CREATE INDEX IF NOT EXISTS idx_sample_data_writer_handler ON sample_data(writer_handler);

@@ -52,3 +52,11 @@ CREATE TRIGGER update_cron_jobs_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+-- sample_data 테이블 (샘플 핸들러용)
+CREATE TABLE IF NOT EXISTS sample_data (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    value TEXT,
+    writer_handler VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
