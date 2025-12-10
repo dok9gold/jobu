@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jobu"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python 기반 통합 배치 스케줄링 시스템"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.12"
 authors = [
-    {name = "dok9"}
+    {name = "dok9", email = "dok9gold@gmail.com"}
 ]
 keywords = ["batch", "scheduler", "cron", "job", "async"]
 classifiers = [
@@ -44,6 +44,9 @@ dev = [
     "pytest-asyncio>=1.0.0,<2.0",
 ]
 
+[project.scripts]
+jobu = "jobu.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/dok9gold/jobu"
 Repository = "https://github.com/dok9gold/jobu"
@@ -51,7 +54,7 @@ Issues = "https://github.com/dok9gold/jobu/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["admin*", "common*", "database*", "dispatcher*", "worker*"]
+include = ["jobu*", "admin*", "common*", "database*", "dispatcher*", "worker*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.sql", "*.yaml.example", "*.html"]
