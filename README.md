@@ -51,7 +51,30 @@ jobu/
 pip install jobu
 ```
 
-### 개발 환경 설치
+## 빠른 시작
+
+```bash
+# 새 프로젝트 생성
+jobu init myproject
+cd myproject
+
+# 가상환경 설정
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# 실행
+python main.py
+```
+
+### 템플릿 옵션
+
+```bash
+jobu init myproject                     # 기본 (main 브랜치)
+jobu init myproject --template sample   # sample 브랜치
+```
+
+## 개발 환경 설치
 
 ```bash
 # 가상환경 생성 및 활성화
