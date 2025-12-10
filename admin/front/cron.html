@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cron Management - JobU Admin</title>
+</head>
+<body>
+    <h1>Cron Management</h1>
+    <nav>
+        <a href="/crons">Crons</a> | <a href="/jobs">Jobs</a> | <a href="/docs">API Docs</a>
+    </nav>
+    <hr>
+
+    <!-- Cron Form -->
+    <h2 id="form-title">Add Cron</h2>
+    <form id="cron-form">
+        <input type="hidden" id="cron-id" value="">
+        <table>
+            <tr>
+                <td><label for="name">Name:</label></td>
+                <td><input type="text" id="name" name="name" required></td>
+            </tr>
+            <tr>
+                <td><label for="description">Description:</label></td>
+                <td><input type="text" id="description" name="description"></td>
+            </tr>
+            <tr>
+                <td><label for="cron_expression">Cron Expression:</label></td>
+                <td><input type="text" id="cron_expression" name="cron_expression" placeholder="* * * * *" required></td>
+            </tr>
+            <tr>
+                <td><label for="handler_name">Handler Name:</label></td>
+                <td><input type="text" id="handler_name" name="handler_name" required></td>
+            </tr>
+            <tr>
+                <td><label for="handler_params">Handler Params (JSON):</label></td>
+                <td><input type="text" id="handler_params" name="handler_params" placeholder="{}"></td>
+            </tr>
+            <tr>
+                <td><label for="is_enabled">Enabled:</label></td>
+                <td><input type="checkbox" id="is_enabled" name="is_enabled" checked></td>
+            </tr>
+            <tr>
+                <td><label for="allow_overlap">Allow Overlap:</label></td>
+                <td><input type="checkbox" id="allow_overlap" name="allow_overlap" checked></td>
+            </tr>
+            <tr>
+                <td><label for="max_retry">Max Retry:</label></td>
+                <td><input type="number" id="max_retry" name="max_retry" value="3" min="0" max="10"></td>
+            </tr>
+            <tr>
+                <td><label for="timeout_seconds">Timeout (seconds):</label></td>
+                <td><input type="number" id="timeout_seconds" name="timeout_seconds" value="3600" min="60" max="86400"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <button type="submit" id="submit-btn">Add</button>
+                    <button type="button" onclick="resetForm()">Reset</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <hr>
+
+    <!-- Cron List -->
+    <h2>Cron List</h2>
+    <div id="message"></div>
+    <table border="1" id="cron-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Expression</th>
+                <th>Handler</th>
+                <th>Enabled</th>
+                <th>Overlap</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="cron-list">
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div id="pagination"></div>
+
+    <script>
+        let currentPage = 1;
+        const pageSize = 20;
+
+        // Load crons on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCrons();
+        });
+
+        // Form submit handler
+        document.getElementById('cron-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const cronId = document.getElementById('cron-id').value;
+
+            const data = {
+                name: document.getElementById('name').value,
+                description: document.getElementById('description').value || null,
+                cron_expression: document.getElementById('cron_expression').value,
+                handler_name: document.getElementById('handler_name').value,
+                is_enabled: document.getElementById('is_enabled').checked,
+                allow_overlap: document.getElementById('allow_overlap').checked,
+                max_retry: parseInt(document.getElementById('max_retry').value),
+                timeout_seconds: parseInt(document.getElementById('timeout_seconds').value),
+            };
+
+            // Parse handler_params as JSON
+            const paramsStr = document.getElementById('handler_params').value;
+            if (paramsStr) {
+                try {
+                    data.handler_params = JSON.parse(paramsStr);
+                } catch (e) {
+                    showMessage('Invalid JSON in handler_params', 'error');
+                    return;
+                }
+            }
+
+            try {
+                let response;
+                if (cronId) {
+                    // Update
+                    response = await fetch(`/api/crons/${cronId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                } else {
+                    // Create
+                    response = await fetch('/api/crons', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                }
+
+                if (response.ok) {
+                    showMessage(cronId ? 'Cron updated successfully' : 'Cron created successfully', 'success');
+                    resetForm();
+                    loadCrons();
+                } else {
+                    const error = await response.json();
+                    showMessage(error.detail || 'Error occurred', 'error');
+                }
+            } catch (e) {
+                showMessage('Network error', 'error');
+            }
+        });
+
+        async function loadCrons() {
+            try {
+                const response = await fetch(`/api/crons?page=${currentPage}&size=${pageSize}`);
+                const data = await response.json();
+
+                const tbody = document.getElementById('cron-list');
+                tbody.innerHTML = '';
+
+                data.items.forEach(cron => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${cron.id}</td>
+                        <td>${cron.name}</td>
+                        <td>${cron.cron_expression}</td>
+                        <td>${cron.handler_name}</td>
+                        <td>${cron.is_enabled ? 'Yes' : 'No'}</td>
+                        <td>${cron.allow_overlap ? 'Yes' : 'No'}</td>
+                        <td>
+                            <button onclick="editCron(${cron.id})">Edit</button>
+                            <button onclick="toggleCron(${cron.id})">${cron.is_enabled ? 'Disable' : 'Enable'}</button>
+                            <button onclick="deleteCron(${cron.id})">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Render pagination
+                renderPagination(data.page, data.pages);
+            } catch (e) {
+                showMessage('Failed to load crons', 'error');
+            }
+        }
+
+        function renderPagination(current, total) {
+            const div = document.getElementById('pagination');
+            let html = '';
+
+            if (current > 1) {
+                html += `<button onclick="goToPage(${current - 1})">Prev</button> `;
+            }
+
+            html += `Page ${current} of ${total}`;
+
+            if (current < total) {
+                html += ` <button onclick="goToPage(${current + 1})">Next</button>`;
+            }
+
+            div.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadCrons();
+        }
+
+        async function editCron(cronId) {
+            try {
+                const response = await fetch(`/api/crons/${cronId}`);
+                const cron = await response.json();
+
+                document.getElementById('cron-id').value = cron.id;
+                document.getElementById('name').value = cron.name;
+                document.getElementById('description').value = cron.description || '';
+                document.getElementById('cron_expression').value = cron.cron_expression;
+                document.getElementById('handler_name').value = cron.handler_name;
+                document.getElementById('handler_params').value = cron.handler_params ? JSON.stringify(cron.handler_params) : '';
+                document.getElementById('is_enabled').checked = cron.is_enabled;
+                document.getElementById('allow_overlap').checked = cron.allow_overlap;
+                document.getElementById('max_retry').value = cron.max_retry;
+                document.getElementById('timeout_seconds').value = cron.timeout_seconds;
+
+                document.getElementById('form-title').textContent = 'Edit Cron';
+                document.getElementById('submit-btn').textContent = 'Update';
+            } catch (e) {
+                showMessage('Failed to load cron', 'error');
+            }
+        }
+
+        async function toggleCron(cronId) {
+            try {
+                const response = await fetch(`/api/crons/${cronId}/toggle`, { method: 'POST' });
+                if (response.ok) {
+                    showMessage('Cron toggled successfully', 'success');
+                    loadCrons();
+                } else {
+                    const error = await response.json();
+                    showMessage(error.detail || 'Error occurred', 'error');
+                }
+            } catch (e) {
+                showMessage('Network error', 'error');
+            }
+        }
+
+        async function deleteCron(cronId) {
+            if (!confirm('Are you sure you want to delete this cron?')) return;
+
+            try {
+                const response = await fetch(`/api/crons/${cronId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showMessage('Cron deleted successfully', 'success');
+                    loadCrons();
+                } else {
+                    const error = await response.json();
+                    showMessage(error.detail || 'Error occurred', 'error');
+                }
+            } catch (e) {
+                showMessage('Network error', 'error');
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('cron-form').reset();
+            document.getElementById('cron-id').value = '';
+            document.getElementById('is_enabled').checked = true;
+            document.getElementById('allow_overlap').checked = true;
+            document.getElementById('max_retry').value = '3';
+            document.getElementById('timeout_seconds').value = '3600';
+            document.getElementById('form-title').textContent = 'Add Cron';
+            document.getElementById('submit-btn').textContent = 'Add';
+        }
+
+        function showMessage(msg, type) {
+            const div = document.getElementById('message');
+            div.textContent = msg;
+            div.style.color = type === 'error' ? 'red' : 'green';
+            setTimeout(() => { div.textContent = ''; }, 3000);
+        }
+    </script>
+</body>
+</html>

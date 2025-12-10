@@ -1,0 +1,5 @@
+dispatcher:
+  database: default                 # database.yaml에 정의된 DB 이름
+  poll_interval_seconds: 60
+  max_sleep_seconds: 300
+  min_cron_interval_seconds: 60

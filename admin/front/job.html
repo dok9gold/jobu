@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job History - JobU Admin</title>
+</head>
+<body>
+    <h1>Job History</h1>
+    <nav>
+        <a href="/crons">Crons</a> | <a href="/jobs">Jobs</a> | <a href="/docs">API Docs</a>
+    </nav>
+    <hr>
+
+    <!-- Filters -->
+    <h2>Filters</h2>
+    <form id="filter-form">
+        <table>
+            <tr>
+                <td><label for="cron_id">Cron:</label></td>
+                <td>
+                    <select id="cron_id" name="cron_id">
+                        <option value="">All</option>
+                        {% for cron in crons %}
+                        <option value="{{ cron.id }}">{{ cron.name }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><label for="status">Status:</label></td>
+                <td>
+                    <select id="status" name="status">
+                        <option value="">All</option>
+                        <option value="PENDING">PENDING</option>
+                        <option value="RUNNING">RUNNING</option>
+                        <option value="SUCCESS">SUCCESS</option>
+                        <option value="FAILED">FAILED</option>
+                        <option value="TIMEOUT">TIMEOUT</option>
+                    </select>
+                </td>
+                <td>
+                    <button type="submit">Search</button>
+                    <button type="button" onclick="resetFilters()">Reset</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <hr>
+
+    <!-- Job List -->
+    <h2>Job Executions</h2>
+    <div id="message"></div>
+    <table border="1" id="job-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Cron</th>
+                <th>Scheduled</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Finished</th>
+                <th>Retry</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="job-list">
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div id="pagination"></div>
+
+    <script>
+        let currentPage = 1;
+        const pageSize = 20;
+
+        // Load jobs on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadJobs();
+        });
+
+        // Filter form submit
+        document.getElementById('filter-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            currentPage = 1;
+            loadJobs();
+        });
+
+        async function loadJobs() {
+            const cronId = document.getElementById('cron_id').value;
+            const status = document.getElementById('status').value;
+
+            let url = `/api/jobs?page=${currentPage}&size=${pageSize}`;
+            if (cronId) url += `&cron_id=${cronId}`;
+            if (status) url += `&status=${status}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                const tbody = document.getElementById('job-list');
+                tbody.innerHTML = '';
+
+                data.items.forEach(job => {
+                    const tr = document.createElement('tr');
+                    const canRetry = job.status === 'FAILED' || job.status === 'TIMEOUT';
+
+                    tr.innerHTML = `
+                        <td>${job.id}</td>
+                        <td>${job.cron_name || '-'}</td>
+                        <td>${formatDate(job.scheduled_time)}</td>
+                        <td>${getStatusBadge(job.status)}</td>
+                        <td>${formatDate(job.started_at)}</td>
+                        <td>${formatDate(job.finished_at)}</td>
+                        <td>${job.retry_count}</td>
+                        <td>
+                            <button onclick="viewJob(${job.id})">View</button>
+                            ${canRetry ? `<button onclick="retryJob(${job.id})">Retry</button>` : ''}
+                            <button onclick="deleteJob(${job.id})">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Render pagination
+                renderPagination(data.page, data.pages);
+            } catch (e) {
+                showMessage('Failed to load jobs', 'error');
+            }
+        }
+
+        function getStatusBadge(status) {
+            const colors = {
+                'PENDING': 'orange',
+                'RUNNING': 'blue',
+                'SUCCESS': 'green',
+                'FAILED': 'red',
+                'TIMEOUT': 'purple',
+            };
+            const color = colors[status] || 'gray';
+            return `<span style="color:${color};font-weight:bold;">${status}</span>`;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+        }
+
+        function renderPagination(current, total) {
+            const div = document.getElementById('pagination');
+            let html = '';
+
+            if (current > 1) {
+                html += `<button onclick="goToPage(${current - 1})">Prev</button> `;
+            }
+
+            html += `Page ${current} of ${total || 1}`;
+
+            if (current < total) {
+                html += ` <button onclick="goToPage(${current + 1})">Next</button>`;
+            }
+
+            div.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadJobs();
+        }
+
+        async function viewJob(jobId) {
+            try {
+                const response = await fetch(`/api/jobs/${jobId}`);
+                const job = await response.json();
+
+                let msg = `Job #${job.id}\n`;
+                msg += `Cron: ${job.cron_name || '-'}\n`;
+                msg += `Status: ${job.status}\n`;
+                msg += `Scheduled: ${formatDate(job.scheduled_time)}\n`;
+                msg += `Started: ${formatDate(job.started_at)}\n`;
+                msg += `Finished: ${formatDate(job.finished_at)}\n`;
+                msg += `Retry Count: ${job.retry_count}\n`;
+                if (job.error_message) {
+                    msg += `Error: ${job.error_message}\n`;
+                }
+                if (job.result) {
+                    msg += `Result: ${job.result}\n`;
+                }
+
+                alert(msg);
+            } catch (e) {
+                showMessage('Failed to load job', 'error');
+            }
+        }
+
+        async function retryJob(jobId) {
+            if (!confirm('Are you sure you want to retry this job?')) return;
+
+            try {
+                const response = await fetch(`/api/jobs/${jobId}/retry`, { method: 'POST' });
+                if (response.ok) {
+                    showMessage('Job queued for retry', 'success');
+                    loadJobs();
+                } else {
+                    const error = await response.json();
+                    showMessage(error.detail || 'Error occurred', 'error');
+                }
+            } catch (e) {
+                showMessage('Network error', 'error');
+            }
+        }
+
+        async function deleteJob(jobId) {
+            if (!confirm('Are you sure you want to delete this job record?')) return;
+
+            try {
+                const response = await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showMessage('Job deleted successfully', 'success');
+                    loadJobs();
+                } else {
+                    const error = await response.json();
+                    showMessage(error.detail || 'Error occurred', 'error');
+                }
+            } catch (e) {
+                showMessage('Network error', 'error');
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('cron_id').value = '';
+            document.getElementById('status').value = '';
+            currentPage = 1;
+            loadJobs();
+        }
+
+        function showMessage(msg, type) {
+            const div = document.getElementById('message');
+            div.textContent = msg;
+            div.style.color = type === 'error' ? 'red' : 'green';
+            setTimeout(() => { div.textContent = ''; }, 3000);
+        }
+    </script>
+</body>
+</html>

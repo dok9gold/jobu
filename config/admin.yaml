@@ -1,0 +1,10 @@
+admin:
+  database: default                 # database.yaml에 정의된 DB 이름
+  host: "0.0.0.0"
+  port: 8080
+  debug: true
+  cors:
+    origins: ["*"]
+    allow_credentials: true
+    allow_methods: ["*"]
+    allow_headers: ["*"]
