@@ -12,6 +12,12 @@ Dispatcher, Worker, Admin API를 한 번에 실행합니다.
 """
 
 import sys
+import os
+
+# Windows 인코딩 설정 (cp949 -> UTF-8)
+if sys.platform == "win32":
+    os.environ["PYTHONUTF8"] = "1"
+    
 import asyncio
 import signal
 import logging
