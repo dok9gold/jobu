@@ -419,6 +419,10 @@ class SQLiteDatabase(BaseDatabase):
                     await queries.create_job_executions_table(pooled_conn.connection)
                 if hasattr(queries, 'create_indexes'):
                     await queries.create_indexes(pooled_conn.connection)
+                if hasattr(queries, 'create_sample_data_table'):
+                    await queries.create_sample_data_table(pooled_conn.connection)
+                if hasattr(queries, 'create_sample_data_indexes'):
+                    await queries.create_sample_data_indexes(pooled_conn.connection)
                 await pooled_conn.connection.commit()
                 logger.info("Initial tables created from init.sql")
             finally:
