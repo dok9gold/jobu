@@ -85,6 +85,20 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+### Windows 인코딩 설정
+
+Windows에서 한글 경로 문제로 인코딩 에러 발생 시:
+
+```powershell
+# PowerShell
+$env:PYTHONUTF8=1
+
+# CMD
+set PYTHONUTF8=1
+```
+
+영구 설정: 시스템 환경변수에 `PYTHONUTF8=1` 추가
+
 ## 실행
 
 ```bash

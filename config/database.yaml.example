@@ -12,3 +12,19 @@ databases:
       synchronous: "NORMAL"
       cache_size: -2000
       foreign_keys: true
+
+  # PostgreSQL 예시
+  # postgres_1:
+  #   type: postgres
+  #   host: localhost
+  #   port: 5432
+  #   database: jobu
+  #   user: jobu
+  #   password: jobu_dev
+  #   pool:
+  #     min_size: 2
+  #     max_size: 10
+  #     max_inactive_connection_lifetime: 300.0
+  #   options:
+  #     timezone: "UTC"
+  #     ssl: false  # Windows 한글 경로 문제 시 false 설정
