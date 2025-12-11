@@ -127,8 +127,10 @@ async def main(modules: list[str]):
         logger.info("Received shutdown signal")
         stop_event.set()
 
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, signal_handler)
+    # Windows는 add_signal_handler를 지원하지 않음
+    if sys.platform != "win32":
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, signal_handler)
 
     # 태스크 생성
     tasks = []
@@ -144,6 +146,8 @@ async def main(modules: list[str]):
 
     try:
         await asyncio.gather(*tasks)
+    except asyncio.CancelledError:
+        logger.info("Tasks cancelled")
     finally:
         await DatabaseRegistry.close_all()
         logger.info("All modules stopped")
@@ -163,4 +167,7 @@ if __name__ == "__main__":
         modules = ["dispatcher", "worker", "admin"]
 
     print(f"Starting jobu: {', '.join(modules)}")
-    asyncio.run(main(modules))
+    try:
+        asyncio.run(main(modules))
+    except KeyboardInterrupt:
+        print("\nShutdown requested by user")
