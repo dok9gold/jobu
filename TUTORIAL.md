@@ -2,6 +2,8 @@
 
 배치 스케줄러의 원리를 학습하기 위한 튜토리얼입니다.
 
+> **요구사항:** Python 3.12+
+
 ## 목차
 
 1. [시작하기](#1-시작하기)
@@ -20,7 +22,7 @@
 ```bash
 # 템플릿에서 프로젝트 생성
 pip install jobu
-jobu init myproject --template example
+jobu init myproject --template template/example
 cd myproject
 
 # 또는 직접 clone
