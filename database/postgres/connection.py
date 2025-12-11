@@ -240,6 +240,7 @@ class PostgresDatabase(BaseDatabase):
                 max_size=pool_config.max_size,
                 max_inactive_connection_lifetime=pool_config.max_inactive_connection_lifetime,
                 command_timeout=pool_config.command_timeout,
+                ssl=opts.get('ssl', False),
                 server_settings={
                     'timezone': opts.get('timezone', 'UTC'),
                 },
