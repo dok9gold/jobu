@@ -14,6 +14,6 @@ class JobInfo:
     retry_count: int
     job_name: str
     handler_name: str
-    handler_params: str | None
+    params: str | None  # job_executions.params
     max_retry: int
     timeout_seconds: int

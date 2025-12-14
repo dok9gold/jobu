@@ -4,11 +4,12 @@ jobu 통합 진입점
 Dispatcher, Worker, Admin API를 한 번에 실행합니다.
 
 사용법:
-    python main.py                 # 전체 실행
-    python main.py dispatcher      # Dispatcher만
-    python main.py worker          # Worker만
-    python main.py admin           # Admin API만
-    python main.py dispatcher worker  # 복수 선택
+    python main.py                      # 전체 실행 (queue_dispatcher 제외)
+    python main.py dispatcher           # Cron Dispatcher만
+    python main.py queue_dispatcher     # Queue Dispatcher만
+    python main.py worker               # Worker만
+    python main.py admin                # Admin API만
+    python main.py dispatcher worker    # 복수 선택
 """
 
 import sys
@@ -26,8 +27,8 @@ logger = logging.getLogger(__name__)
 
 async def run_dispatcher(config: dict, stop_event: asyncio.Event):
     """Dispatcher 실행"""
-    from dispatcher.main import Dispatcher
-    from dispatcher.model.dispatcher import DispatcherConfig
+    from dispatcher.cron.main import Dispatcher
+    from dispatcher.cron.model.dispatcher import DispatcherConfig
 
     dispatcher_config = DispatcherConfig(**config.get("dispatcher", {}))
     dispatcher = Dispatcher(dispatcher_config)
@@ -78,6 +79,22 @@ async def run_admin(config: dict, stop_event: asyncio.Event):
     await server.serve()
 
 
+async def run_queue_dispatcher(config: dict, stop_event: asyncio.Event):
+    """Queue Dispatcher 실행"""
+    from dispatcher.queue.main import QueueDispatcher
+    from dispatcher.queue.model.queue import QueueDispatcherConfig
+
+    queue_config = QueueDispatcherConfig(**config.get("queue_dispatcher", {}))
+    dispatcher = QueueDispatcher(queue_config)
+
+    async def wait_stop():
+        await stop_event.wait()
+        await dispatcher.stop()
+
+    asyncio.create_task(wait_stop())
+    await dispatcher.start()
+
+
 async def main(modules: list[str]):
     """메인 함수"""
     config_path = Path(__file__).parent / "config"
@@ -95,7 +112,15 @@ async def main(modules: list[str]):
     with open(config_path / "admin.yaml", encoding="utf-8") as f:
         admin_config = yaml.safe_load(f)
 
-    config = {**db_config, **dispatcher_config, **worker_config, **admin_config}
+    # queue 설정 로드 (optional)
+    queue_config_path = config_path / "queue.yaml"
+    if queue_config_path.exists():
+        with open(queue_config_path, encoding="utf-8") as f:
+            queue_config = yaml.safe_load(f)
+    else:
+        queue_config = {}
+
+    config = {**db_config, **dispatcher_config, **worker_config, **admin_config, **queue_config}
 
     # 로깅 설정
     logging.basicConfig(
@@ -107,6 +132,8 @@ async def main(modules: list[str]):
     db_names = set()
     if "dispatcher" in modules:
         db_names.add(config.get("dispatcher", {}).get("database", "default"))
+    if "queue_dispatcher" in modules:
+        db_names.add(config.get("queue_dispatcher", {}).get("database", "default"))
     if "worker" in modules:
         worker_cfg = config.get("worker", {})
         db_names.add(worker_cfg.get("database", "default"))
@@ -136,7 +163,10 @@ async def main(modules: list[str]):
     tasks = []
     if "dispatcher" in modules:
         tasks.append(asyncio.create_task(run_dispatcher(config, stop_event)))
-        logger.info("Dispatcher started")
+        logger.info("Cron Dispatcher started")
+    if "queue_dispatcher" in modules:
+        tasks.append(asyncio.create_task(run_queue_dispatcher(config, stop_event)))
+        logger.info("Queue Dispatcher started")
     if "worker" in modules:
         tasks.append(asyncio.create_task(run_worker(config, stop_event)))
         logger.info("Worker started")
@@ -156,14 +186,15 @@ async def main(modules: list[str]):
 if __name__ == "__main__":
     # 인자 파싱
     args = sys.argv[1:]
-    valid_modules = {"dispatcher", "worker", "admin"}
+    valid_modules = {"dispatcher", "queue_dispatcher", "worker", "admin"}
 
     if args:
         modules = [m for m in args if m in valid_modules]
         if not modules:
-            print(f"Usage: python main.py [dispatcher] [worker] [admin]")
+            print(f"Usage: python main.py [dispatcher] [queue_dispatcher] [worker] [admin]")
             sys.exit(1)
     else:
+        # 기본 실행은 queue_dispatcher 제외 (Kafka 필요)
         modules = ["dispatcher", "worker", "admin"]
 
     print(f"Starting jobu: {', '.join(modules)}")

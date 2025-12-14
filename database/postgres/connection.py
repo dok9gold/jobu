@@ -195,10 +195,13 @@ class PostgresDatabase(BaseDatabase):
             await ctx.execute(...)
     """
 
+    db_type: str = "postgres"
+
     def __init__(self, name: str, config: dict[str, Any]):
         super().__init__(name)
         self._config = config
         self._pool: asyncpg.Pool | None = None
+        self._queries: dict[str, Any] = {}
 
     @classmethod
     async def create(cls, name: str, config: dict[str, Any]) -> 'PostgresDatabase':
@@ -261,6 +264,18 @@ class PostgresDatabase(BaseDatabase):
         if self._pool is None:
             raise RuntimeError(f"Database '{self.name}' not initialized")
         return self._pool
+
+    def load_queries(self, name: str, sql_path: str) -> Any:
+        """aiosql로 SQL 파일 로드"""
+        import aiosql
+        from database import get_aiosql_adapter
+        queries = aiosql.from_path(sql_path, get_aiosql_adapter(self.db_type))
+        self._queries[name] = queries
+        return queries
+
+    def get_queries(self, name: str) -> Any | None:
+        """로드된 쿼리 세트 반환"""
+        return self._queries.get(name)
 
     async def close(self) -> None:
         """데이터베이스 연결 종료"""

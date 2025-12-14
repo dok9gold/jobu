@@ -20,7 +20,7 @@ class JobResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    job_id: int
+    job_id: int | None = None  # event 실행은 job_id가 NULL일 수 있음
     cron_name: str | None = None
     scheduled_time: datetime | None = None
     status: str

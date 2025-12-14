@@ -19,9 +19,12 @@ CREATE TABLE IF NOT EXISTS cron_jobs (
 -- job_executions 테이블 생성
 CREATE TABLE IF NOT EXISTS job_executions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    job_id INTEGER NOT NULL,
+    job_id INTEGER,
+    handler_name TEXT NOT NULL,
     scheduled_time TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'PENDING',
+    params TEXT,
+    param_source TEXT DEFAULT 'cron',
     started_at TEXT,
     finished_at TEXT,
     retry_count INTEGER DEFAULT 0,
@@ -35,7 +38,9 @@ CREATE TABLE IF NOT EXISTS job_executions (
 -- name: create_indexes#
 -- 인덱스 생성
 CREATE INDEX IF NOT EXISTS idx_job_executions_job_id ON job_executions(job_id);
+CREATE INDEX IF NOT EXISTS idx_job_executions_handler_name ON job_executions(handler_name);
 CREATE INDEX IF NOT EXISTS idx_job_executions_status ON job_executions(status);
+CREATE INDEX IF NOT EXISTS idx_job_executions_param_source ON job_executions(param_source);
 CREATE INDEX IF NOT EXISTS idx_job_executions_created_at ON job_executions(created_at);
 CREATE INDEX IF NOT EXISTS idx_job_executions_scheduled_time ON job_executions(scheduled_time);
 CREATE INDEX IF NOT EXISTS idx_cron_jobs_is_enabled ON cron_jobs(is_enabled);

@@ -14,7 +14,7 @@ SELECT
     handler_name, handler_params, is_enabled, allow_overlap,
     max_retry, timeout_seconds, created_at, updated_at
 FROM cron_jobs
-WHERE is_enabled = 1
+WHERE is_enabled = TRUE
 ORDER BY id;
 
 -- name: get_job_by_id^
@@ -116,14 +116,14 @@ ORDER BY e.created_at ASC;
 
 -- name: insert_execution<!
 -- 새 실행 이력 생성 (scheduled_time 포함)
-INSERT INTO job_executions (job_id, scheduled_time, status)
-VALUES (:job_id, :scheduled_time, 'PENDING');
+INSERT INTO job_executions (job_id, handler_name, scheduled_time, params, param_source, status)
+VALUES (:job_id, :handler_name, :scheduled_time, :params, 'cron', 'PENDING');
 
 -- name: create_execution_if_not_exists$
 -- 중복 방지 Job 생성 (ON CONFLICT DO NOTHING)
 -- 동일한 job_id + scheduled_time 조합이 이미 존재하면 무시
-INSERT INTO job_executions (job_id, scheduled_time, status)
-VALUES (:job_id, :scheduled_time, 'PENDING')
+INSERT INTO job_executions (job_id, handler_name, scheduled_time, params, param_source, status)
+VALUES (:job_id, :handler_name, :scheduled_time, :params, 'cron', 'PENDING')
 ON CONFLICT(job_id, scheduled_time) DO NOTHING;
 
 -- name: check_execution_exists^

@@ -13,6 +13,8 @@ from typing import Any
 class BaseDatabase(ABC):
     """DB 추상 클래스 - SQLite, PostgreSQL 등 공통 인터페이스"""
 
+    db_type: str = "sqlite"  # 서브클래스에서 오버라이드
+
     def __init__(self, name: str):
         self.name = name
 

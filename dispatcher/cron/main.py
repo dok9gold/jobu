@@ -5,7 +5,7 @@ cron_jobs 테이블을 주기적으로 폴링하여 실행 시점에 도달한 �
 job_executions 테이블에 PENDING 상태의 Job을 생성합니다.
 
 실행 방법:
-    python -m dispatcher.main
+    python -m dispatcher.cron.main
     python main.py dispatcher
 """
 
@@ -22,13 +22,14 @@ from database import (
     transactional,
     transactional_readonly,
     get_connection,
+    get_aiosql_adapter_for_db,
     ConnectionPoolExhaustedError,
     TransactionError,
     QueryExecutionError,
 )
 from database.registry import DatabaseRegistry
-from dispatcher.model.dispatcher import CronJob, DispatcherConfig
-from dispatcher.exception import (
+from dispatcher.cron.model.dispatcher import CronJob, DispatcherConfig
+from dispatcher.cron.exception import (
     CronParseError,
     CronIntervalTooShortError,
     JobCreationError,
@@ -69,9 +70,10 @@ class Dispatcher:
         self._running = True
         self._stop_event = asyncio.Event()
 
-        # SQL 쿼리 로드
+        # SQL 쿼리 로드 (등록된 DB 타입에 맞는 어댑터 자동 선택)
         sql_path = Path(__file__).parent / "sql" / "dispatcher.sql"
-        self._queries = aiosql.from_path(str(sql_path), "aiosqlite")
+        adapter = get_aiosql_adapter_for_db(self._config.database)
+        self._queries = aiosql.from_path(str(sql_path), adapter)
 
         logger.info(
             f"Dispatcher started (poll_interval={self._config.poll_interval_seconds}s, "
@@ -293,15 +295,22 @@ class Dispatcher:
             True: 새로 생성됨
             False: 이미 존재하여 생성하지 않음
         """
+        import json
+
         try:
             ctx = get_connection()
             scheduled_time_str = scheduled_time.strftime("%Y-%m-%d %H:%M:%S")
+
+            # params를 JSON 문자열로 변환
+            params_json = json.dumps(job.handler_params) if job.handler_params else None
 
             # ON CONFLICT DO NOTHING으로 중복 방지
             await self._queries.create_execution_if_not_exists(
                 ctx.connection,
                 job_id=job.id,
+                handler_name=job.handler_name,
                 scheduled_time=scheduled_time_str,
+                params=params_json,
             )
 
             # 생성 여부 확인 (changes() 대신 조회로 확인)
@@ -385,7 +394,7 @@ if __name__ == "__main__":
 
     async def main():
         # 설정 로드 (프로젝트 루트 기준)
-        config_path = Path(__file__).parent.parent / "config"
+        config_path = Path(__file__).parent.parent.parent / "config"
 
         # 데이터베이스 설정
         with open(config_path / "database.yaml", encoding="utf-8") as f:
