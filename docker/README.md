@@ -1,6 +1,6 @@
 # Docker 개발 환경
 
-jobu 개발/테스트용 PostgreSQL, MySQL 환경을 제공합니다.
+jobu 개발/테스트용 PostgreSQL, MySQL, Kafka 환경을 제공합니다.
 
 ## 실행
 
@@ -15,6 +15,9 @@ docker-compose up -d postgres
 
 # MySQL만 실행
 docker-compose up -d mysql
+
+# Kafka만 실행 (Zookeeper 포함)
+docker-compose up -d kafka
 
 # 로그 확인
 docker-compose logs -f
@@ -64,12 +67,44 @@ mysql -h localhost -u jobu -pjobu_dev jobu
 docker exec -it jobu-mysql mysql -u jobu -pjobu_dev jobu
 ```
 
+### Kafka
+| 항목 | 값 |
+|------|-----|
+| Host | localhost |
+| Port | 9092 |
+| Internal Port | 29092 (컨테이너 간 통신) |
+
+```bash
+# 토픽 목록 조회
+docker exec -it jobu-kafka kafka-topics --bootstrap-server localhost:9092 --list
+
+# 토픽 생성
+docker exec -it jobu-kafka kafka-topics --bootstrap-server localhost:9092 \
+  --create --topic job-events --partitions 1 --replication-factor 1
+
+# 메시지 전송 테스트
+docker exec -it jobu-kafka kafka-console-producer --bootstrap-server localhost:9092 --topic job-events
+
+# 메시지 수신 테스트
+docker exec -it jobu-kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic job-events --from-beginning
+```
+
+### Zookeeper
+| 항목 | 값 |
+|------|-----|
+| Host | localhost |
+| Port | 2181 |
+
+Kafka 의존성으로 자동 실행됩니다.
+
 ## 리소스 제한
 
 | 서비스 | 최소 메모리 | 최대 메모리 |
 |--------|-------------|-------------|
 | PostgreSQL | 128MB | 256MB |
 | MySQL | 256MB | 512MB |
+| Kafka | 256MB | 512MB |
+| Zookeeper | 128MB | 256MB |
 
 ## 초기화 SQL
 
@@ -92,4 +127,5 @@ docker-compose ps
 # 헬스체크 상태
 docker inspect jobu-postgres --format='{{.State.Health.Status}}'
 docker inspect jobu-mysql --format='{{.State.Health.Status}}'
+docker inspect jobu-kafka --format='{{.State.Health.Status}}'
 ```

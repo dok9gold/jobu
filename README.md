@@ -7,9 +7,11 @@ Python 기반 통합 배치 스케줄링 시스템
 ## 개요
 
 RDB에 크론 정보를 저장하고, Dispatcher가 스케줄에 따라 Job을 생성하면 Worker가 실행하는 구조입니다.
+Kafka 등 메시지 큐를 통한 이벤트 기반 Job 실행도 지원합니다.
 
 ```
-[cron_jobs] --Dispatcher--> [job_executions] --Worker--> [Handler]
+[cron_jobs] --Cron Dispatcher--> [job_executions] --Worker--> [Handler]
+[Kafka]     --Queue Dispatcher-->
 ```
 
 ## 특징
@@ -28,10 +30,12 @@ RDB에 크론 정보를 저장하고, Dispatcher가 스케줄에 따라 Job을 �
 |------|------|
 | [admin](admin/README.md) | 관리 API 및 모니터링 화면 |
 | [database](database/README.md) | DB 커넥션풀, 트랜잭션 관리 |
-| [dispatcher](dispatcher/README.md) | 크론 기반 Job 생성 |
+| [dispatcher](dispatcher/README.md) | Job 생성 (Cron/Queue) |
 | [worker](worker/README.md) | Job 실행 워커풀 |
 
-**흐름:** Admin에서 크론 등록 -> Dispatcher가 스케줄에 맞춰 Job 생성 -> Worker가 Job 실행
+**흐름:**
+- **Cron:** Admin에서 크론 등록 -> Cron Dispatcher가 스케줄에 맞춰 Job 생성 -> Worker가 Job 실행
+- **Event:** Kafka 메시지 수신 -> Queue Dispatcher가 Job 생성 -> Worker가 Job 실행
 
 ## 구조
 
@@ -40,9 +44,11 @@ jobu/
   config/       # 설정 파일
   database/     # DB 커넥션풀 (SQLite, PostgreSQL, MySQL)
   dispatcher/   # Job 생성
+    cron/       # 크론 기반 Job 생성
+    queue/      # 메시지 큐 기반 Job 생성 (Kafka)
   worker/       # Job 실행
   admin/        # 관리 API
-  docker/       # Docker 개발 환경
+  docker/       # Docker 개발 환경 (PostgreSQL, MySQL, Kafka)
 ```
 
 ## 설치
@@ -102,16 +108,19 @@ set PYTHONUTF8=1
 ## 실행
 
 ```bash
-# Admin API
+# 전체 실행 (Cron Dispatcher + Worker + Admin)
+python main.py
+
+# 개별 실행
+python main.py dispatcher          # Cron Dispatcher
+python main.py queue_dispatcher    # Queue Dispatcher (Kafka)
+python main.py worker              # Worker
+python main.py admin               # Admin API
+
+# 모듈 직접 실행
 python -m uvicorn admin.main:app --reload --port 8080
 
-# Dispatcher
-python -m dispatcher.main
-
-# Worker
-python -m worker.main
-
-# Docker (PostgreSQL, MySQL 개발환경)
+# Docker (PostgreSQL, MySQL, Kafka 개발환경)
 cd docker && docker-compose up -d
 ```
 
