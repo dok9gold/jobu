@@ -126,6 +126,24 @@ async def sync_data():
     # 둘 다 성공하면 커밋, 하나라도 실패하면 롤백
 ```
 
+### aiosql 어댑터
+
+```python
+from database import get_aiosql_adapter, get_aiosql_adapter_for_db
+
+# DB 타입으로 어댑터 이름 조회
+adapter = get_aiosql_adapter('postgres')  # 'asyncpg'
+adapter = get_aiosql_adapter('mysql')     # 'asyncmy'
+adapter = get_aiosql_adapter('sqlite')    # 'aiosqlite'
+
+# 등록된 DB 이름으로 어댑터 이름 조회
+adapter = get_aiosql_adapter_for_db('default')  # DB 타입 자동 감지
+
+# aiosql 쿼리 로드
+import aiosql
+queries = aiosql.from_path('sql/queries.sql', adapter)
+```
+
 ### 종료
 
 ```python
