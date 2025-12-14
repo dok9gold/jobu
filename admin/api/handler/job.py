@@ -37,6 +37,7 @@ class JobHandler:
             id=row_dict['id'],
             job_id=row_dict['job_id'],
             cron_name=row_dict.get('cron_name'),
+            handler_name=row_dict.get('handler_name'),
             scheduled_time=row_dict.get('scheduled_time'),
             status=row_dict['status'],
             started_at=row_dict.get('started_at'),

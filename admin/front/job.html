@@ -55,6 +55,7 @@
             <tr>
                 <th>ID</th>
                 <th>Cron</th>
+                <th>Handler</th>
                 <th>Scheduled</th>
                 <th>Status</th>
                 <th>Started</th>
@@ -108,6 +109,7 @@
                     tr.innerHTML = `
                         <td>${job.id}</td>
                         <td>${job.cron_name || '-'}</td>
+                        <td>${job.handler_name || '-'}</td>
                         <td>${formatDate(job.scheduled_time)}</td>
                         <td>${getStatusBadge(job.status)}</td>
                         <td>${formatDate(job.started_at)}</td>
@@ -176,6 +178,7 @@
 
                 let msg = `Job #${job.id}\n`;
                 msg += `Cron: ${job.cron_name || '-'}\n`;
+                msg += `Handler: ${job.handler_name || '-'}\n`;
                 msg += `Status: ${job.status}\n`;
                 msg += `Scheduled: ${formatDate(job.scheduled_time)}\n`;
                 msg += `Started: ${formatDate(job.started_at)}\n`;
