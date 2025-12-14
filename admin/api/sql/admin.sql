@@ -107,7 +107,7 @@ DELETE FROM cron_jobs WHERE id = :cron_id;
 -- name: get_jobs_paged
 -- 잡 실행 이력 목록 조회 (페이징, 크론 이름 포함)
 SELECT
-    e.id, e.job_id, c.name as cron_name, e.scheduled_time, e.status,
+    e.id, e.job_id, c.name as cron_name, e.handler_name, e.scheduled_time, e.status,
     e.started_at, e.finished_at, e.retry_count,
     e.error_message, e.result, e.created_at
 FROM job_executions e
@@ -118,7 +118,7 @@ LIMIT :limit OFFSET :offset;
 -- name: get_jobs_by_cron
 -- 특정 크론의 잡 실행 이력 조회 (페이징)
 SELECT
-    e.id, e.job_id, c.name as cron_name, e.scheduled_time, e.status,
+    e.id, e.job_id, c.name as cron_name, e.handler_name, e.scheduled_time, e.status,
     e.started_at, e.finished_at, e.retry_count,
     e.error_message, e.result, e.created_at
 FROM job_executions e
@@ -130,7 +130,7 @@ LIMIT :limit OFFSET :offset;
 -- name: get_jobs_by_status
 -- 상태별 잡 실행 이력 조회 (페이징)
 SELECT
-    e.id, e.job_id, c.name as cron_name, e.scheduled_time, e.status,
+    e.id, e.job_id, c.name as cron_name, e.handler_name, e.scheduled_time, e.status,
     e.started_at, e.finished_at, e.retry_count,
     e.error_message, e.result, e.created_at
 FROM job_executions e
@@ -142,7 +142,7 @@ LIMIT :limit OFFSET :offset;
 -- name: get_jobs_by_cron_and_status
 -- 크론 및 상태별 잡 실행 이력 조회 (페이징)
 SELECT
-    e.id, e.job_id, c.name as cron_name, e.scheduled_time, e.status,
+    e.id, e.job_id, c.name as cron_name, e.handler_name, e.scheduled_time, e.status,
     e.started_at, e.finished_at, e.retry_count,
     e.error_message, e.result, e.created_at
 FROM job_executions e
@@ -170,7 +170,7 @@ SELECT COUNT(*) as cnt FROM job_executions WHERE job_id = :cron_id AND status = 
 -- name: get_job_by_id^
 -- ID로 잡 실행 이력 조회
 SELECT
-    e.id, e.job_id, c.name as cron_name, e.scheduled_time, e.status,
+    e.id, e.job_id, c.name as cron_name, e.handler_name, e.scheduled_time, e.status,
     e.started_at, e.finished_at, e.retry_count,
     e.error_message, e.result, e.created_at
 FROM job_executions e
