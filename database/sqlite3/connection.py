@@ -439,7 +439,8 @@ class SQLiteDatabase(BaseDatabase):
 
     def load_queries(self, name: str, sql_path: str) -> Queries:
         """aiosql로 SQL 파일 로드"""
-        queries = aiosql.from_path(sql_path, "aiosqlite")
+        from database import get_aiosql_adapter
+        queries = aiosql.from_path(sql_path, get_aiosql_adapter(self.db_type))
         self._queries[name] = queries
         return queries
 

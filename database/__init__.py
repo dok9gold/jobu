@@ -50,6 +50,24 @@ def get_db(name: str = 'default'):
     return DatabaseRegistry.get(name)
 
 
+def get_aiosql_adapter(db_type: str) -> str:
+    """DB 타입에 맞는 aiosql 어댑터 이름 반환"""
+    adapters = {
+        'sqlite': 'aiosqlite',
+        'postgres': 'asyncpg',
+        'mysql': 'asyncmy',
+    }
+    if db_type not in adapters:
+        raise ValueError(f"Unsupported database type: {db_type}")
+    return adapters[db_type]
+
+
+def get_aiosql_adapter_for_db(db_name: str = 'default') -> str:
+    """등록된 DB의 타입에 맞는 aiosql 어댑터 이름 반환"""
+    db = DatabaseRegistry.get(db_name)
+    return get_aiosql_adapter(db.db_type)
+
+
 __all__ = [
     'BaseDatabase',
     'DatabaseRegistry',
@@ -57,6 +75,8 @@ __all__ = [
     'set_connection',
     'clear_connection',
     'get_db',
+    'get_aiosql_adapter',
+    'get_aiosql_adapter_for_db',
     'transactional',
     'transactional_readonly',
     'DatabaseError',

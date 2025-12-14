@@ -1,0 +1,37 @@
+# Queue Dispatcher Configuration
+
+queue_dispatcher:
+  # 사용할 데이터베이스 (job_executions 저장용)
+  database: default
+
+  # 큐 어댑터 설정
+  adapter:
+    type: kafka  # kafka, sqs, servicebus
+
+    # Kafka 설정
+    kafka:
+      bootstrap_servers: localhost:9092
+      group_id: jobu-queue-dispatcher
+      topic: jobu-events
+      auto_offset_reset: earliest
+      enable_auto_commit: false
+      max_poll_records: 10
+
+    # AWS SQS 설정 (예시)
+    # sqs:
+    #   queue_url: https://sqs.region.amazonaws.com/account/queue-name
+    #   region: ap-northeast-2
+    #   max_messages: 10
+    #   wait_time_seconds: 20
+
+    # Azure Service Bus 설정 (예시)
+    # servicebus:
+    #   connection_string: Endpoint=sb://...
+    #   queue_name: jobu-events
+
+  # 폴링 설정
+  poll_interval_seconds: 1
+
+  # 메시지 처리 실패 시 재시도 설정
+  max_retries: 3
+  retry_delay_seconds: 5

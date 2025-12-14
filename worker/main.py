@@ -17,7 +17,7 @@ from typing import Any
 
 import aiosql
 
-from database import get_connection, transactional_readonly
+from database import get_connection, get_aiosql_adapter_for_db, transactional_readonly
 from worker.executor import Executor, JobInfo
 
 logger = logging.getLogger(__name__)
@@ -60,9 +60,10 @@ class WorkerPool:
         self._stop_event = asyncio.Event()
         self._semaphore = asyncio.Semaphore(self._config.pool_size)
 
-        # SQL 쿼리 로드
+        # SQL 쿼리 로드 (등록된 DB 타입에 맞는 어댑터 자동 선택)
         sql_path = Path(__file__).parent / "sql" / "worker.sql"
-        self._queries = aiosql.from_path(str(sql_path), "aiosqlite")
+        adapter = get_aiosql_adapter_for_db(self._config.database)
+        self._queries = aiosql.from_path(str(sql_path), adapter)
         self._executor = Executor(self._queries)
 
         logger.info(
@@ -135,7 +136,7 @@ class WorkerPool:
                 retry_count=job["retry_count"],
                 job_name=job["job_name"],
                 handler_name=job["handler_name"],
-                handler_params=job["handler_params"],
+                params=job["params"],
                 max_retry=job["max_retry"],
                 timeout_seconds=job["timeout_seconds"],
             )

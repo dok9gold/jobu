@@ -1,18 +1,20 @@
 -- name: get_pending_executions
 -- PENDING 상태의 잡 목록 조회 (LIMIT 적용)
+-- job_id가 NULL인 경우 (event 실행)도 지원
 SELECT
     e.id,
     e.job_id,
+    e.handler_name,
     e.scheduled_time,
+    e.params,
+    e.param_source,
     e.retry_count,
     e.created_at,
-    j.name as job_name,
-    j.handler_name,
-    j.handler_params,
-    j.max_retry,
-    j.timeout_seconds
+    COALESCE(j.name, e.handler_name) as job_name,
+    COALESCE(j.max_retry, 3) as max_retry,
+    COALESCE(j.timeout_seconds, 3600) as timeout_seconds
 FROM job_executions e
-JOIN cron_jobs j ON e.job_id = j.id
+LEFT JOIN cron_jobs j ON e.job_id = j.id
 WHERE e.status = 'PENDING'
 ORDER BY e.created_at ASC
 LIMIT :limit;
@@ -65,21 +67,23 @@ WHERE id = :execution_id;
 
 -- name: get_execution_by_id^
 -- ID로 실행 정보 조회
+-- job_id가 NULL인 경우 (event 실행)도 지원
 SELECT
     e.id,
     e.job_id,
+    e.handler_name,
     e.scheduled_time,
     e.status,
+    e.params,
+    e.param_source,
     e.started_at,
     e.finished_at,
     e.retry_count,
     e.error_message,
     e.result,
     e.created_at,
-    j.handler_name,
-    j.handler_params,
-    j.max_retry,
-    j.timeout_seconds
+    COALESCE(j.max_retry, 3) as max_retry,
+    COALESCE(j.timeout_seconds, 3600) as timeout_seconds
 FROM job_executions e
-JOIN cron_jobs j ON e.job_id = j.id
+LEFT JOIN cron_jobs j ON e.job_id = j.id
 WHERE e.id = :execution_id;

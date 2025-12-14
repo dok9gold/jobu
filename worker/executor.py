@@ -57,15 +57,15 @@ class Executor:
 
         # 3. params 파싱 (dict -> HandlerParams)
         try:
-            params_dict = json.loads(job_info.handler_params or '{}')
+            params_dict = json.loads(job_info.params or '{}') if isinstance(job_info.params, str) else (job_info.params or {})
             params = HandlerParams(**params_dict)
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse handler_params: {e}")
-            await self._fail_execution(execution_id, f"Invalid handler_params: {e}", job_info.max_retry, job_info.retry_count)
+            logger.error(f"Failed to parse params: {e}")
+            await self._fail_execution(execution_id, f"Invalid params: {e}", job_info.max_retry, job_info.retry_count)
             return False
         except Exception as e:
             logger.error(f"Failed to create HandlerParams: {e}")
-            await self._fail_execution(execution_id, f"Invalid handler_params: {e}", job_info.max_retry, job_info.retry_count)
+            await self._fail_execution(execution_id, f"Invalid params: {e}", job_info.max_retry, job_info.retry_count)
             return False
 
         # 4. 핸들러 실행 (타임아웃 적용)
@@ -104,9 +104,12 @@ class Executor:
     async def _claim_execution(self, execution_id: int) -> bool:
         """PENDING -> RUNNING 상태 변경"""
         ctx = get_connection()
-        # aiosql의 ! 연산자는 affected rows (int)를 직접 반환
-        affected_rows = await self._queries.claim_execution(ctx.connection, execution_id=execution_id)
-        return affected_rows > 0
+        # asyncpg는 "UPDATE N" 형태 문자열 반환
+        result = await self._queries.claim_execution(ctx.connection, execution_id=execution_id)
+        if isinstance(result, str):
+            # "UPDATE 1" -> 1 추출
+            return result.split()[-1] != "0"
+        return result > 0 if result else False
 
     @transactional
     async def _complete_execution(self, execution_id: int, result: str | None) -> None:
